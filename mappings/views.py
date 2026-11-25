@@ -1,5 +1,7 @@
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -22,7 +24,13 @@ class MappingListCreateView(generics.ListCreateAPIView):
         ).select_related('patient', 'doctor')
 
     def perform_create(self, serializer):
-        serializer.save()
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except IntegrityError:
+            raise ValidationError(
+                {'detail': 'This doctor is already assigned to this patient.'}
+            )
 
 
 class PatientMappingsView(generics.ListAPIView):

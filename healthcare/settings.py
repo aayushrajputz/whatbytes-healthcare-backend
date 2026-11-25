@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,6 +30,12 @@ SECRET_KEY = os.getenv(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DEBUG', True)
+
+_DEV_SECRET_KEY = 'django-insecure-dev-only-change-me-in-production'
+if not DEBUG and (not os.getenv('SECRET_KEY') or SECRET_KEY == _DEV_SECRET_KEY):
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be set to a strong random value when DEBUG=False.'
+    )
 
 ALLOWED_HOSTS = [
     h.strip()
@@ -152,6 +159,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',

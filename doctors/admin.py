@@ -1,3 +1,10 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Doctor
+
+
+@admin.register(Doctor)
+class DoctorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'specialization', 'email', 'phone_number', 'created_at')
+    search_fields = ('name', 'email', 'specialization')
+    list_filter = ('specialization', 'created_at')

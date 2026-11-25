@@ -12,7 +12,7 @@ class PatientDoctorMapping(models.Model):
     )
     doctor = models.ForeignKey(
         Doctor,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='patient_mappings',
     )
     assigned_at = models.DateTimeField(auto_now_add=True)
