@@ -1,0 +1,246 @@
+{
+  "info": {
+    "name": "Healthcare Backend API",
+    "description": "Patient, Doctor & Mapping management API with JWT auth.\n\nSet the `base_url` variable (default http://127.0.0.1:8000) and `access_token` after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "patient_id", "value": "" },
+    { "key": "doctor_id", "value": "" },
+    { "key": "mapping_id", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr Smith\",\n  \"email\": \"smith@clinic.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/register/", "host": ["{{base_url}}"], "path": ["api", "auth", "register", ""] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access) {",
+                  "  pm.collectionVariables.set('access_token', json.access);",
+                  "  pm.collectionVariables.set('refresh_token', json.refresh);",
+                  "}",
+                  "pm.test('Login successful', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"smith@clinic.com\",\n  \"password\": \"SecurePass123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login/", "host": ["{{base_url}}"], "path": ["api", "auth", "login", ""] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/token/refresh/", "host": ["{{base_url}}"], "path": ["api", "auth", "token", "refresh", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Create Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["var json = pm.response.json();", "if (json.id) { pm.collectionVariables.set('patient_id', json.id); }", "pm.test('Patient created', function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"age\": 45,\n  \"gender\": \"Male\",\n  \"contact_number\": \"+1 555 123 4567\",\n  \"address\": \"123 Main St\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/patients/", "host": ["{{base_url}}"], "path": ["api", "patients", ""] }
+          }
+        },
+        {
+          "name": "List Patients",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/patients/", "host": ["{{base_url}}"], "path": ["api", "patients", ""] }
+          }
+        },
+        {
+          "name": "Get Patient",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/patients/{{patient_id}}/", "host": ["{{base_url}}"], "path": ["api", "patients", "{{patient_id}}", ""] }
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated\",\n  \"age\": 46,\n  \"gender\": \"Male\",\n  \"contact_number\": \"+1 555 123 4567\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/patients/{{patient_id}}/", "host": ["{{base_url}}"], "path": ["api", "patients", "{{patient_id}}", ""] }
+          }
+        },
+        {
+          "name": "Delete Patient",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/patients/{{patient_id}}/", "host": ["{{base_url}}"], "path": ["api", "patients", "{{patient_id}}", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Create Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["var json = pm.response.json();", "if (json.id) { pm.collectionVariables.set('doctor_id', json.id); }", "pm.test('Doctor created', function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Alice\",\n  \"specialization\": \"Cardiology\",\n  \"email\": \"alice@hospital.com\",\n  \"phone_number\": \"+1 555 999 0000\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/doctors/", "host": ["{{base_url}}"], "path": ["api", "doctors", ""] }
+          }
+        },
+        {
+          "name": "List Doctors",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/doctors/", "host": ["{{base_url}}"], "path": ["api", "doctors", ""] }
+          }
+        },
+        {
+          "name": "Get Doctor",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/doctors/{{doctor_id}}/", "host": ["{{base_url}}"], "path": ["api", "doctors", "{{doctor_id}}", ""] }
+          }
+        },
+        {
+          "name": "Update Doctor",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Alice Smith\",\n  \"specialization\": \"Cardiology\",\n  \"email\": \"alice@hospital.com\",\n  \"phone_number\": \"+1 555 999 0000\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/doctors/{{doctor_id}}/", "host": ["{{base_url}}"], "path": ["api", "doctors", "{{doctor_id}}", ""] }
+          }
+        },
+        {
+          "name": "Delete Doctor",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/doctors/{{doctor_id}}/", "host": ["{{base_url}}"], "path": ["api", "doctors", "{{doctor_id}}", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mappings",
+      "item": [
+        {
+          "name": "Assign Doctor to Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["var json = pm.response.json();", "if (json.id) { pm.collectionVariables.set('mapping_id', json.id); }", "pm.test('Mapping created', function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": \"{{patient_id}}\",\n  \"doctor_id\": \"{{doctor_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/mappings/", "host": ["{{base_url}}"], "path": ["api", "mappings", ""] }
+          }
+        },
+        {
+          "name": "List Mappings",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/mappings/", "host": ["{{base_url}}"], "path": ["api", "mappings", ""] }
+          }
+        },
+        {
+          "name": "Get Patient's Doctors",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/mappings/{{patient_id}}/", "host": ["{{base_url}}"], "path": ["api", "mappings", "{{patient_id}}", ""] }
+          }
+        },
+        {
+          "name": "Delete Mapping",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/mappings/{{mapping_id}}/", "host": ["{{base_url}}"], "path": ["api", "mappings", "{{mapping_id}}", ""] }
+          }
+        }
+      ]
+    }
+  ]
+}
