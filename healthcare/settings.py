@@ -5,8 +5,10 @@ Generated for a production-grade Healthcare Backend API.
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -47,6 +49,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
     # Local apps
@@ -88,43 +91,21 @@ WSGI_APPLICATION = 'healthcare.wsgi.application'
 
 
 # Database
-# Switch between SQLite (default) and PostgreSQL via DATABASE_URL in .env.
-# Examples:
-#   DATABASE_URL=sqlite:///db.sqlite3
-#   DATABASE_URL=postgres://user:password@localhost:5432/healthcare
+# Set DATABASE_URL in .env (e.g. postgres://user:pass@host:5432/dbname).
+# Falls back to a local SQLite file when DATABASE_URL is not set.
 
-def build_database_config():
-    database_url = os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
-    scheme, _, path = database_url.partition('://')
-
-    if scheme == 'postgres' or scheme == 'postgresql':
-        # postgres://user:pass@host:port/dbname
-        auth_host, _, dbname = path.partition('/')
-        auth, _, hostport = auth_host.rpartition('@')
-        user, _, password = auth.partition(':')
-        host, _, port = hostport.partition(':')
-        return {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': dbname,
-            'USER': user,
-            'PASSWORD': password,
-            'HOST': host or 'localhost',
-            'PORT': port or '5432',
-        }
-
-    # sqlite:///path/to/db.sqlite3  (absolute or relative to BASE_DIR)
-    db_path = path.lstrip('/') or 'db.sqlite3'
-    if not db_path.endswith('.sqlite3'):
-        db_path = f'{db_path}.sqlite3'
-    return {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / db_path,
+_database_url = os.getenv('DATABASE_URL')
+if _database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(_database_url, conn_max_age=600),
     }
-
-
-DATABASES = {
-    'default': build_database_config(),
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        },
+    }
 
 
 # Password validation
@@ -171,20 +152,28 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '100/minute',
+    },
 }
 
 
 # Simple JWT
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': __import__('datetime').timedelta(
+    'ACCESS_TOKEN_LIFETIME': timedelta(
         minutes=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME_MINUTES', '60'))
     ),
-    'REFRESH_TOKEN_LIFETIME': __import__('datetime').timedelta(
+    'REFRESH_TOKEN_LIFETIME': timedelta(
         days=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME_DAYS', '7'))
     ),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
