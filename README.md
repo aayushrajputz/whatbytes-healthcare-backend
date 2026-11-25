@@ -351,6 +351,15 @@ Unauthenticated requests return `401`:
 
 Not found / not owned returns `404`.
 
+## Architectural Highlights
+
+- **Idempotent mapping transactions** — patient–doctor mapping creation runs inside `transaction.atomic()`; duplicate assignments are rejected with `400` (both via serializer validation and an `IntegrityError` safety net for concurrent requests) instead of `500`s.
+- **Cascade protection (`PROTECT`)** — `PatientDoctorMapping.doctor` uses `on_delete=PROTECT`, so deleting a doctor with active mappings is blocked with a clear `400` rather than silently destroying patient assignments.
+- **Scoped ownership verification** — patients and mappings are strictly scoped to `created_by = request.user`; cross-user access returns `404`, and mapping creation validates patient ownership before saving.
+- **DRF pagination** — global `PageNumberPagination` (`PAGE_SIZE = 10`) keeps list endpoints bounded as data grows.
+- **Least-privilege permissions** — doctor reads are open to any authenticated user, while writes require staff (`IsAdminOrReadOnly`).
+- **JWT hardening** — refresh-token rotation with blacklist-after-rotation, plus anon/user rate throttling on all endpoints.
+
 ## Postman
 
 Import `postman_collection.json` into Postman. Set the `base_url` and `access_token` collection variables after logging in.
